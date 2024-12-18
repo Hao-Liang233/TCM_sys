@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <title>症候查詢介面</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+    <script>
+        async function handleClick(key, sub_key = null) {
+            const response = await fetch("/select", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ key, sub_key })
+            });
+
+            const data = await response.json();
+
+            // 清空舊的選項
+            const symptomsSelect = document.getElementById("symptoms-left");
+            symptomsSelect.innerHTML = "";
+
+            // 顯示症狀選項
+            if (data.symptoms.length > 0) {
+                data.symptoms.forEach(symptom => {
+                    const option = document.createElement("option");
+                    option.value = symptom;
+                    option.textContent = symptom;
+                    symptomsSelect.appendChild(option);
+                });
+            } else {
+                const option = document.createElement("option");
+                option.textContent = "無對應的症狀";
+                option.disabled = true;
+                symptomsSelect.appendChild(option);
+            }
+        }
+
+        function moveToRight() {
+            const leftSelect = document.getElementById("symptoms-left");
+            const rightSelect = document.getElementById("symptoms-right");
+
+            Array.from(leftSelect.selectedOptions).forEach(option => {
+                const newOption = option.cloneNode(true);
+                rightSelect.appendChild(newOption);
+            });
+        }
+
+        function addToRight() {
+            const searchInput = document.getElementById("search-input");
+            const rightSelect = document.getElementById("symptoms-right");
+
+            // 取得輸入內容
+            const inputValue = searchInput.value.trim();
+
+            if (inputValue) {
+                // 建立新的選項
+                const newOption = document.createElement("option");
+                newOption.textContent = inputValue;
+                newOption.value = inputValue;
+
+                // 檢查是否已經存在於 symptoms-right 中
+                const exists = Array.from(rightSelect.options).some(option => option.value === inputValue);
+                if (!exists) {
+                    rightSelect.appendChild(newOption);
+                    searchInput.value = ""; // 清空輸入框
+                } else {
+                    alert("此症狀已存在！");
+                }
+            } else {
+                alert("請輸入症狀名稱！");
+            }
+        }
+
+        function deleteFromRight() {
+            const rightSelect = document.getElementById("symptoms-right");
+            Array.from(rightSelect.selectedOptions).forEach(option => {
+                option.remove();
+            });
+        }
+
+        async function submitRightToBackend() {
+            const rightSelect = document.getElementById("symptoms-right");
+            const selectedSymptoms = Array.from(rightSelect.options).map(option => option.value);
+            console.log(selectedSymptoms)
+            const response = await fetch("/submit", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ selectedSymptoms })
+            });
+
+            const result = await response.json();
+            //alert(result.message || "提交成功！");
+            // 獲取結果顯示區域
+            const resultList = document.getElementById("resultList");
+            resultList.innerHTML = ""; // 清空之前的結果
+
+            // 動態生成結果項目
+            result.top_3.forEach(item => {
+                const listItem = document.createElement("li");
+                listItem.textContent = `症狀：${item.text}，相似度：${(item.similarity * 100).toFixed(2)}%`;
+                resultList.appendChild(listItem);
+            });
+        }
+
+        $().ready(function(){
+            document.getElementById("search-input").addEventListener("input", async function () {
+                const query = this.value.trim();
+
+                // 當輸入為空時清空症狀列表
+                if (query === "") {
+                    const symptomsSelect = document.getElementById("symptoms-left");
+                    symptomsSelect.innerHTML = "";
+                    return;
+                }
+
+                // 發送即時搜尋請求
+                const response = await fetch("/search", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                // 更新症狀列表
+                const symptomsSelect = document.getElementById("symptoms-left");
+                symptomsSelect.innerHTML = ""; // 清空現有選項
+
+                if (data.symptoms.length > 0) {
+                    data.symptoms.forEach(symptom => {
+                        const option = document.createElement("option");
+                        option.value = symptom;
+                        option.textContent = symptom;
+                        symptomsSelect.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement("option");
+                    option.textContent = "無對應的症狀";
+                    option.disabled = true;
+                    symptomsSelect.appendChild(option);
+                }
+            });
+        })
+        
+    </script>
+</head>
+<body>
+    <h1>症候查詢介面</h1>
+    <ul>
+        {% for key, value in classes.items() %}
+        <li class="dropdown">
+            <span class="clickable" onclick="handleClick('{{ key }}')">{{ value.name }}</span>
+            {% if value.Sub %}
+            <div class="dropdown-content">
+                <ul>
+                    {% for sub_key, sub_value in value.Sub.items() %}
+                    <li>
+                        <span class="clickable" onclick="handleClick('{{ key }}', '{{ sub_key }}')">{{ sub_value }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="container">
+        <!-- 左側選單 -->
+        <div class="select-container">
+            <div>
+                <input type="text" id="search-input" placeholder="輸入關鍵字">
+                <button id="search" onclick="addToRight()" style="padding: 5px;margin: 0;">新增選項</button>
+            </div>
+            <label for="symptoms-left">可用症狀:</label>
+            <select id="symptoms-left" name="symptoms-left" multiple></select>
+        </div>
+
+        <!-- 中間按鈕 -->
+        <div class="select-container">
+            <button onclick="moveToRight()">新增至右側</button>
+            <button onclick="deleteFromRight()">刪除右側選項</button>
+            <button onclick="submitRightToBackend()">提交右側選項</button>
+        </div>
+
+        <!-- 右側選單 -->
+        <div class="select-container">
+            <label for="symptoms-right">已選症狀:</label>
+            <select id="symptoms-right" name="symptoms-right" multiple></select>
+        </div>
+    </div>
+    <div id="resultArea">
+        <h2>相似症狀結果：</h2>
+        <ul id="resultList"></ul>
+    </div>
+    <div style="position: fixed; bottom: 20px; right: 20px;">
+        <button onclick="window.location.href='{{ url_for('_set') }}'", style="padding: 10px 20px; font-size: 14px;">切換至設定頁面</button>
+    </div>
+</body>
+</html>

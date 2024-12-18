@@ -1,0 +1,121 @@
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0fdf4; /* 淺綠背景 */
+    color: #333; /* 文字顏色 */
+}
+
+h1 {
+    text-align: center;
+    padding: 20px;
+    color: #2f855a; /* 深綠色 */
+    border-bottom: 2px solid #38a169; /* 深綠色邊框 */
+    background-color: #f0fff4; /* 更亮的背景 */
+    margin-bottom: 20px;
+}
+
+nav {
+    display: flex;
+    justify-content: center; /* 水平置中 */
+    align-items: center; /* 垂直置中 */
+    background-color: #e6f7eb; /* 背景顏色 */
+    padding: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* 陰影 */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+ul {
+    display: flex; /* 水平排列 */
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    position: relative;
+    margin: 0 10px;
+    padding: 10px 20px;
+    background-color: #ffffff; /* 白色背景 */
+    border-radius: 6px; /* 圓角 */
+    transition: transform 0.2s, background-color 0.2s; /* 過渡效果 */
+}
+
+li:hover {
+    background-color: #c6f6d5; /* 淺綠色 hover 效果 */
+    transform: translateY(-2px); /* 輕微上移 */
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%; /* 顯示在主選單下方 */
+    left: 0;
+    background-color: #ffffff; /* 子選單背景 */
+    border-radius: 6px; /* 子選單圓角 */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* 子選單陰影 */
+    z-index: 10;
+    min-width: 200px; /* 子選單最小寬度 */
+}
+
+li:hover .dropdown-content {
+    display: block; /* 滑過顯示子選單 */
+}
+
+.clickable {
+    cursor: pointer;
+    color: #2f855a; /* 深綠色文字 */
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.clickable:hover {
+    color: #276749; /* 更深的綠色 hover 效果 */
+}
+
+/* 子選單與主選單的間距 */
+ul ul {
+    margin-top: 5px; /* 子選單與主選單的間距 */
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px; /* 控制元件之間的間距 */
+    padding: 20px;
+}
+
+.select-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+select {
+    width: 200px;
+    height: 300px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 5px;
+    background-color: #ffffff;
+}
+
+button {
+    margin: 10px 0;
+    padding: 10px 20px;
+    background-color: #38a169;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2f855a;
+}

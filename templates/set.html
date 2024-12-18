@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <title>症狀類別設定</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+    <script>
+        $().ready(function(){
+            document.getElementById("search-input").addEventListener("input", async function () {
+                const query = this.value.trim();
+
+                // 當輸入為空時清空症狀列表
+                if (query === "") {
+                    const symptomsSelect = document.getElementById("symptoms-left");
+                    symptomsSelect.innerHTML = "";
+                    return;
+                }
+
+                // 發送即時搜尋請求
+                const response = await fetch("/search", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                // 更新症狀列表
+                const symptomsSelect = document.getElementById("symptoms-left");
+                symptomsSelect.innerHTML = ""; // 清空現有選項
+
+                if (data.symptoms.length > 0) {
+                    data.symptoms.forEach(symptom => {
+                        const option = document.createElement("option");
+                        option.value = symptom;
+                        option.textContent = symptom;
+                        symptomsSelect.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement("option");
+                    option.textContent = "無對應的症狀";
+                    option.disabled = true;
+                    symptomsSelect.appendChild(option);
+                }
+            });
+        })
+
+        async function handleClick(key, sub_key = null) {
+            const response = await fetch("/select", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ key, sub_key })
+            });
+
+            const data = await response.json();
+
+            const symptomsSelect = document.getElementById("symptoms-left");
+            symptomsSelect.innerHTML = "";
+
+            if (data.symptoms.length > 0) {
+                data.symptoms.forEach(symptom => {
+                    const option = document.createElement("option");
+                    option.value = symptom;
+                    option.textContent = symptom;
+                    option.dataset.mainCategory = key;
+                    option.dataset.subCategory = sub_key;
+                    symptomsSelect.appendChild(option);
+                });
+            } else {
+                const option = document.createElement("option");
+                option.textContent = "無對應的症狀";
+                option.disabled = true;
+                symptomsSelect.appendChild(option);
+            }
+        }
+
+        async function loadCategories() {
+            const rightSelect = document.getElementById("symptoms-right");
+
+            // 從後端生成的 classes 中動態添加選項
+            const _classes = {{ classes|tojson }};
+            for (const [key, value] of Object.entries(_classes)) {
+                const mainCategory = value.name;
+
+                const option = document.createElement("option");
+                option.value = mainCategory;
+                option.textContent = mainCategory;
+                option.dataset.mainCategory = key;
+                option.dataset.subCategory = "";
+                rightSelect.appendChild(option);
+
+                if (JSON.stringify(value.Sub) != "{}") {
+                    for (const [subKey, subValue] of Object.entries(value.Sub)) {
+                        const option = document.createElement("option");
+                        option.value = `${mainCategory} -> ${subValue}`;
+                        option.textContent = `${mainCategory} -> ${subValue}`;
+                        option.dataset.mainCategory = key;
+                        option.dataset.subCategory = subKey;
+                        rightSelect.appendChild(option);
+                    }
+                }
+            }
+        }
+
+        async function modifyCategory() {
+            const leftSelect = document.getElementById("symptoms-left");
+            const rightSelect = document.getElementById("symptoms-right");
+
+            var leftOption = ""
+            var old_MainCategory = ""
+            var old_SubCategory = ""
+            var left_obj;
+            
+            Array.from(leftSelect.selectedOptions).forEach(option => {
+                leftOption = option.value;
+                old_MainCategory = option.dataset.mainCategory;
+                old_SubCategory = option.dataset.subCategory;
+                left_obj = option;
+            });
+            
+            if (leftOption != ""){
+                Array.from(rightSelect.selectedOptions).forEach(async option => {
+                    const newMainCategory = option.dataset.mainCategory;
+                    const subCategory = option.dataset.subCategory;
+
+                    const response = await fetch("/modify_category", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            symptom: leftOption,
+                            old_sub_category: old_MainCategory,
+                            old_main_category: old_SubCategory,
+                            new_sub_category: subCategory,
+                            new_main_category: newMainCategory
+                        })
+                    });
+
+                    if (response.ok) {
+                        left_obj.remove()
+                    } else {
+                        alert("修改類別失敗！請稍後重試。");
+                    }
+                });
+            }
+        }
+
+        async function deleteSymptom() {
+
+            const leftSelect = document.getElementById("symptoms-left");
+            Array.from(leftSelect.selectedOptions).forEach(async option => {
+                var mainCategory = "";
+                var subCategory = "";
+                mainCategory = option.dataset.mainCategory;
+                subCategory = option.dataset.subCategory;
+                const symptom = option.value
+
+                const response = await fetch("/delete_symptom", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        symptom : symptom,
+                        main_category : mainCategory,
+                        sub_category : subCategory
+                    })
+                });
+
+                if (response.ok) {
+                    option.remove();
+                } else {
+                    alert("刪除症狀失敗！請稍後重試。");
+                }
+            });
+        }
+
+        async function addsymptom() {
+            const rightSelect = document.getElementById("symptoms-right");
+            const searchInput = document.getElementById("search-input"); // 取得 search-input 元素
+            const newSymptom = searchInput.value.trim(); // 讀取並去掉多餘的空白
+
+            if (!newSymptom) {
+                alert("請輸入新的症狀名稱！");
+                return;
+            }
+
+            Array.from(rightSelect.selectedOptions).forEach(async option => {
+                const newMainCategory = option.dataset.mainCategory;
+                const subCategory = option.dataset.subCategory;
+
+                const response = await fetch("/modify_category", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        symptom: newSymptom, // 使用 search-input 的值
+                        old_sub_category: "",
+                        old_main_category: "",
+                        new_sub_category: subCategory,
+                        new_main_category: newMainCategory
+                    })
+                });
+
+                if (response.ok) {
+                    // 假設 `left_obj` 是指要移除的項目，需確保它在作用域內
+                    alert("新增完成")
+                } else {
+                    alert("修改類別失敗！請稍後重試。");
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", loadCategories);
+    </script>
+</head>
+<body>
+    <h1>症狀類別設定</h1>
+    <ul>
+        {% for key, value in classes.items() %}
+        <li class="dropdown">
+            <span class="clickable" onclick="handleClick('{{ key }}')">{{ value.name }}</span>
+            {% if value.Sub %}
+            <div class="dropdown-content">
+                <ul>
+                    {% for sub_key, sub_value in value.Sub.items() %}
+                    <li>
+                        <span class="clickable" onclick="handleClick('{{ key }}', '{{ sub_key }}')">{{ sub_value }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="container">
+        <!-- 左側選單 -->
+        <div class="select-container">
+            <div>
+                <input type="text" id="search-input" placeholder="輸入關鍵字">
+                <button onclick="addsymptom()">新增症狀</button>
+            </div>
+            <label for="symptoms-left">可用症狀:</label>
+            <select id="symptoms-left" name="symptoms-left" multiple></select>
+        </div>
+
+        <!-- 中間選單 -->
+        <div class="select-container">
+            <button onclick="modifyCategory()">修改症狀類別</button>
+            <button onclick="deleteSymptom()">刪除症狀</button>
+        </div>
+
+        <!-- 右側選單 -->
+        <div class="select-container">
+            <label for="symptoms-right">症狀分類:</label>
+            <select id="symptoms-right" name="symptoms-right" multiple></select>
+        </div>
+    </div>
+    <div style="position: fixed; bottom: 20px; right: 20px;">
+        <button onclick="window.location.href='{{ url_for('index') }}'", style="padding: 10px 20px; font-size: 14px;">切換至查詢頁面</button>
+    </div>
+</body>
+</html>

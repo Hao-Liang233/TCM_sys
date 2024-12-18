@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='img/python-file.png') }}">
+    <title>Code Generation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .input {
+            width: 80%;
+            height: 200px; /* Reduced height */
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .output {
+            width: 80%;
+            height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            resize: vertical;
+            box-sizing: border-box;
+            display: none;
+            margin: 0 auto; /* Centering the textarea */
+        }
+        .output.active {
+            display: block;
+        }
+        select, input[type="submit"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        #sending {
+            position: absolute;
+            z-index: 10;
+            width: 400px;
+            visibility: hidden;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #sending table {
+            width: 100%;
+            height: 80px;
+            background-color: #8FA8E9;
+            color: #333;
+            text-align: center;
+        }
+        #sending td {
+            background-color: #eeeeee;
+            vertical-align: middle;
+        }
+        .output-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .form-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+        .toggle-buttons {
+            margin-bottom: 10px;
+        }
+        .toggle-buttons button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 0 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #ddd;
+            border-radius: 4px;
+        }
+        .toggle-buttons button.active {
+            background-color: #8FA8E9;
+            color: #fff;
+        }
+    </style>
+    <script language="javascript">
+    function showSending() {
+        document.getElementById("sending").style.visibility = "visible";
+    }
+    function showTextarea(id) {
+        var textareas = document.querySelectorAll('.output');
+        var buttons = document.querySelectorAll('.toggle-buttons button');
+        textareas.forEach(function(textarea) {
+            textarea.classList.remove('active');
+        });
+        buttons.forEach(function(button) {
+            button.classList.remove('active');
+        });
+        document.getElementById(id).classList.add('active');
+        document.querySelector(`button[data-target="${id}"]`).classList.add('active');
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        // Show the first textarea by default
+        showTextarea('originalModel');
+    });
+    </script>
+</head>
+<body>
+    <div id="sending">
+        <table>
+            <tr>
+                <td>Content is being processed, please wait...</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Code Generation</h2>
+    <form action="/submit" method="post">
+        <h2>Question:</h2>
+        <p><textarea id="code" class="input" name="question" placeholder="Enter your question"></textarea></p>
+        <div class="form-controls">
+            <select name="model">
+                <option value="">Please select model</option>
+                <option>Gemma</option>
+                <option>Llama</option>
+                <option>OpenELM</option>
+            </select>
+            <input type="submit" value="submit" onClick="showSending()" />
+        </div>
+    </form>
+
+    <div class="output-container">
+        <div class="toggle-buttons">
+            <button data-target="originalModel" onclick="showTextarea('originalModel')">Original Model</button>
+            <button data-target="finetuneModel" onclick="showTextarea('finetuneModel')">Finetune Model</button>
+        </div>
+        <textarea id="originalModel" class="output" disabled="disabled">{{AI_response}}</textarea>
+        <textarea id="finetuneModel" class="output" disabled="disabled">{{AI_response2}}</textarea>
+    </div>
+</body>
+</html>
