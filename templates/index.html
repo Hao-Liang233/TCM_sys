@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <title>症候查詢介面</title>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
-    <script>
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script>  
         async function handleClick(key, sub_key = null) {
             const response = await fetch("/select", {
                 method: "POST",
