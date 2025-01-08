@@ -69,14 +69,13 @@ def calculate_similarity(a, b):
 
 @app.route("/submit", methods=["POST"])
 def submit():
+    """症狀相似度比對"""
     data = request.json
     Symptoms = data.get("selectedSymptoms")
     
     if not Symptoms:
         return jsonify({"error": "未選擇症狀"}), 400
 
-    # 將症狀轉成字串，用逗號分隔
-    Symptoms_str = ",".join(Symptoms)
     # 進行相似度比對
     results = []
     for key, value in zh_hou_symptoms.items():
@@ -98,6 +97,7 @@ def submit():
 
 @app.route('/search', methods=['POST'])
 def search_symptoms():
+    """查詢相似的症狀"""
     query = request.json.get('query', '').strip()
     if not query:
         return jsonify({"symptoms": []})
@@ -117,6 +117,7 @@ def search_symptoms():
 
 @app.route('/modify_category', methods=['POST'])
 def modify_category():
+    """修改症狀類別"""
     data = request.json
     if data:
         symptom = data["symptom"]
@@ -142,6 +143,7 @@ def modify_category():
 
 @app.route('/delete_symptom', methods=['POST'])
 def delete_symptom():
+    """刪除症狀"""
     data = request.json.get("symptom", "")
     if data:
         json_data = load_json_data()
